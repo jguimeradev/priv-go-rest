@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello, World")
+
 	c := config.Load()
 	fmt.Println(c)
 }

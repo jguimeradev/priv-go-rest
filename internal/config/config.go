@@ -28,32 +28,30 @@ type Config struct {
 	DbName     string
 }
 
-type ErrMessages string
+func (c *Config) Validate() []error {
 
-func (c *Config) Validate() []ErrMessages {
-
-	msg := make([]ErrMessages, 0)
+	msg := make([]error, 0)
 
 	if c.AppEnv == "" {
-		msg = append(msg, "[WARNING]: The value of APP_ENV is empty.")
+		msg = append(msg, fmt.Errorf("[ERROR]: The value of APP_ENV is empty."))
 	}
 	if c.AppPort == "" {
-		msg = append(msg, "[WARNING]: The value of APP_PORT is empty.")
+		msg = append(msg, fmt.Errorf("[ERROR]: The value of APP_PORT is empty."))
 	}
 	if c.DbHost == "" {
-		msg = append(msg, "[WARNING]: The value of DB_HOST is empty.")
+		msg = append(msg, fmt.Errorf("[ERROR]: The value of DB_HOST is empty."))
 	}
 	if c.DbPort == "" {
-		msg = append(msg, "[WARNING]: The value of DB_PORT is empty.")
+		msg = append(msg, fmt.Errorf("[ERROR]: The value of DB_PORT is empty."))
 	}
 	if c.DbUser == "" {
-		msg = append(msg, "[WARNING]: The value of DB_USER is empty.")
+		msg = append(msg, fmt.Errorf("[ERROR]: The value of DB_USER is empty."))
 	}
 	if c.DbPassword == "" {
-		msg = append(msg, "[WARNING]: The value of DB_PASSWORD is empty.")
+		msg = append(msg, fmt.Errorf("[ERROR]: The value of DB_PASSWORD is empty."))
 	}
 	if c.DbName == "" {
-		msg = append(msg, "[WARNING]: The value of DB_NAME is empty.")
+		msg = append(msg, fmt.Errorf("[ERROR]: The value of DB_NAME is empty."))
 	}
 
 	return msg
@@ -61,10 +59,16 @@ func (c *Config) Validate() []ErrMessages {
 
 func Load() Config {
 
-	err := godotenv.Load(".env")
+	s := os.Getenv(app_env)
 
-	if err != nil {
-		log.Println("[WARNING]: Environment not loaded. Bye")
+	if len(s) == 0 {
+
+		err := godotenv.Load(".env")
+
+		if err != nil {
+			log.Println("[ERROR]: Environment not loaded.")
+			os.Exit(1)
+		}
 	}
 
 	c := Config{
@@ -80,11 +84,13 @@ func Load() Config {
 	msg := c.Validate()
 
 	if len(msg) > 0 {
-		for _, v := range msg {
-			fmt.Println(v)
+		for _, err := range msg {
+			log.Println(err.Error())
 		}
 		os.Exit(1)
 	}
+
+	log.Println("[INFO]: Running in", c.AppEnv, "env")
 
 	return c
 
