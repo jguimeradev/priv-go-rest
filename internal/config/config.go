@@ -57,7 +57,7 @@ func (c *Config) Validate() []error {
 	return msg
 }
 
-func Load() Config {
+func Load() (Config, []error) {
 
 	s := os.Getenv(app_env)
 
@@ -66,8 +66,7 @@ func Load() Config {
 		err := godotenv.Load(".env")
 
 		if err != nil {
-			log.Println("[ERROR]: Environment not loaded.")
-			os.Exit(1)
+			return Config{}, []error{err}
 		}
 	}
 
@@ -81,17 +80,14 @@ func Load() Config {
 		DbName:     os.Getenv(db_name),
 	}
 
-	msg := c.Validate()
+	err := c.Validate()
 
-	if len(msg) > 0 {
-		for _, err := range msg {
-			log.Println(err.Error())
-		}
-		os.Exit(1)
+	if len(err) > 0 {
+		return Config{}, err
 	}
 
 	log.Println("[INFO]: Running in", c.AppEnv, "env")
 
-	return c
+	return c, nil
 
 }
