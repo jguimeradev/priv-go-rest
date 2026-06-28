@@ -1,6 +1,8 @@
 package repository
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type User struct {
 	ID       int
@@ -28,6 +30,7 @@ func (d *UserRepo) Create(name string, email string, password string) (int, erro
 	}
 
 	id, err := res.LastInsertId()
+
 	if err != nil {
 		return 0, err
 	}
@@ -37,7 +40,7 @@ func (d *UserRepo) Create(name string, email string, password string) (int, erro
 
 func (d *UserRepo) All() ([]User, error) {
 
-	rows, err := d.db.Query("SELECT id,name,email, password from users")
+	rows, err := d.db.Query("SELECT id,name, email from users")
 
 	var users []User
 
@@ -49,24 +52,52 @@ func (d *UserRepo) All() ([]User, error) {
 
 	for rows.Next() {
 		var user User
-		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Password); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Email); err != nil {
 			return []User{}, err
 		}
 		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return []User{}, err
 	}
 
 	return users, nil
 
 }
 
-func (d *UserRepo) Read() (User, error) {
+func (d *UserRepo) Read(id int) (User, error) {
+
+	var user User
+	err := d.db.QueryRow("SELECT id, name, email, password from users WHERE id = ?", id).Scan(&user.ID, &user.Name, &user.Email, &user.Password)
+
+	if err != nil {
+		return User{}, err
+	}
+
+	return user, nil
 
 }
 
-func (d *UserRepo) Update() error {
+func (d *UserRepo) Update(user *User) error {
+
+	_, err := d.db.Exec("UPDATE users SET name = ?, email = ? WHERE id = ?", user.Name, user.Email, user.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 }
 
-func (d *UserRepo) Delete() error {
+func (d *UserRepo) Delete(id int) error {
 
+	_, err := d.db.Exec("DELETE FROM users WHERE id = ?", id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
