@@ -16,6 +16,7 @@ const (
 	db_user     string = "DB_USER"
 	db_password string = "DB_PASSWORD"
 	db_name     string = "DB_NAME"
+	net_prot    string = "NET_PROT"
 )
 
 type Config struct {
@@ -26,6 +27,7 @@ type Config struct {
 	DbUser     string
 	DbPassword string
 	DbName     string
+	NetProt    string
 }
 
 func (c *Config) Validate() []error {
@@ -53,6 +55,9 @@ func (c *Config) Validate() []error {
 	if c.DbName == "" {
 		msg = append(msg, fmt.Errorf("[ERROR]: The value of DB_NAME is empty."))
 	}
+	if c.NetProt == "" {
+		msg = append(msg, fmt.Errorf("[ERROR]: The value of NET_PROT is empty."))
+	}
 
 	return msg
 }
@@ -78,6 +83,7 @@ func Load() (Config, []error) {
 		DbUser:     os.Getenv(db_user),
 		DbPassword: os.Getenv(db_password),
 		DbName:     os.Getenv(db_name),
+		NetProt:    os.Getenv(net_prot),
 	}
 
 	err := c.Validate()
