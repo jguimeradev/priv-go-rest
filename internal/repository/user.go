@@ -11,6 +11,11 @@ type User struct {
 	Password string
 }
 
+type UpdateUserParams struct {
+	Name  string
+	Email string
+}
+
 type UserRepo struct {
 	db *sql.DB
 }
@@ -79,9 +84,9 @@ func (d *UserRepo) Read(id int) (User, error) {
 
 }
 
-func (d *UserRepo) Update(user *User) error {
+func (d *UserRepo) Update(id int, params UpdateUserParams) error {
 
-	_, err := d.db.Exec("UPDATE users SET name = ?, email = ? WHERE id = ?", user.Name, user.Email, user.ID)
+	_, err := d.db.Exec("UPDATE users SET name = ?, email = ? WHERE id = ?", params.Name, params.Email, id)
 
 	if err != nil {
 		return err
@@ -94,6 +99,17 @@ func (d *UserRepo) Update(user *User) error {
 func (d *UserRepo) Delete(id int) error {
 
 	_, err := d.db.Exec("DELETE FROM users WHERE id = ?", id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *UserRepo) UpdatePassword(id int, password string) error {
+
+	_, err := d.db.Exec("UPDATE users SET password = ? WHERE id = ?", password, id)
 
 	if err != nil {
 		return err
