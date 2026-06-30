@@ -1,5 +1,7 @@
 package domain
 
+import "errors"
+
 type UpdateUserParams struct {
 	Name  string
 	Email string
@@ -17,3 +19,5 @@ type UserResponse struct {
 	Name  string
 	Email string
 }
+
+var ErrUserNotFound = errors.New("user not found")

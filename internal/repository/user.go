@@ -2,6 +2,8 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 
 	"github.com/jguimeradev/priv-go-rest/internal/domain"
 )
@@ -67,7 +69,10 @@ func (d *UserRepo) Read(id int) (domain.User, error) {
 	err := d.db.QueryRow("SELECT id, name, email, password from users WHERE id = ?", id).Scan(&user.ID, &user.Name, &user.Email, &user.Password)
 
 	if err != nil {
-		return domain.User{}, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.User{}, domain.ErrUserNotFound
+		}
+		return domain.User{}, fmt.Errorf("Read: %w", err)
 	}
 
 	return user, nil

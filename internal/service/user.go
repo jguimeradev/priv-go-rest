@@ -1,14 +1,8 @@
 package service
 
 import (
-	"database/sql"
-	"errors"
-	"fmt"
-
 	"github.com/jguimeradev/priv-go-rest/internal/domain"
 )
-
-var ErrUserNotFound = errors.New("user not found")
 
 type UserService interface {
 	CreateUser(name string, email string, password string) (int, error)
@@ -38,22 +32,6 @@ func NewUserSvc(repo UserRepository) *UserSvc {
 	}
 }
 
-func (s *UserSvc) ReadUser(id int) (domain.UserResponse, error) {
-
-	u, err := s.userRepo.Read(id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return domain.UserResponse{}, ErrUserNotFound
-		}
-
-		return domain.UserResponse{}, fmt.Errorf("ReadUser: %w", err)
-	}
-
-	ur := newUserResponse(&u)
-
-	return ur, nil
-}
-
 func newUserResponse(u *domain.User) domain.UserResponse {
 
 	r := domain.UserResponse{
@@ -63,4 +41,17 @@ func newUserResponse(u *domain.User) domain.UserResponse {
 	}
 
 	return r
+}
+
+func (s *UserSvc) ReadUser(id int) (domain.UserResponse, error) {
+
+	u, err := s.userRepo.Read(id)
+
+	if err != nil {
+		return domain.UserResponse{}, err
+	}
+
+	ur := newUserResponse(&u)
+
+	return ur, nil
 }
