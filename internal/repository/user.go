@@ -2,19 +2,9 @@ package repository
 
 import (
 	"database/sql"
+
+	"github.com/jguimeradev/priv-go-rest/internal/domain"
 )
-
-type User struct {
-	ID       int
-	Name     string
-	Email    string
-	Password string
-}
-
-type UpdateUserParams struct {
-	Name  string
-	Email string
-}
 
 type UserRepo struct {
 	db *sql.DB
@@ -43,48 +33,48 @@ func (d *UserRepo) Create(name string, email string, password string) (int, erro
 	return int(id), nil
 }
 
-func (d *UserRepo) All() ([]User, error) {
+func (d *UserRepo) All() ([]domain.User, error) {
 
 	rows, err := d.db.Query("SELECT id,name, email from users")
 
-	var users []User
+	var users []domain.User
 
 	if err != nil {
-		return []User{}, err
+		return []domain.User{}, err
 	}
 
 	defer rows.Close()
 
 	for rows.Next() {
-		var user User
+		var user domain.User
 		if err := rows.Scan(&user.ID, &user.Name, &user.Email); err != nil {
-			return []User{}, err
+			return []domain.User{}, err
 		}
 		users = append(users, user)
 	}
 
 	if err = rows.Err(); err != nil {
-		return []User{}, err
+		return []domain.User{}, err
 	}
 
 	return users, nil
 
 }
 
-func (d *UserRepo) Read(id int) (User, error) {
+func (d *UserRepo) Read(id int) (domain.User, error) {
 
-	var user User
+	var user domain.User
 	err := d.db.QueryRow("SELECT id, name, email, password from users WHERE id = ?", id).Scan(&user.ID, &user.Name, &user.Email, &user.Password)
 
 	if err != nil {
-		return User{}, err
+		return domain.User{}, err
 	}
 
 	return user, nil
 
 }
 
-func (d *UserRepo) Update(id int, params UpdateUserParams) error {
+func (d *UserRepo) Update(id int, params domain.UpdateUserParams) error {
 
 	_, err := d.db.Exec("UPDATE users SET name = ?, email = ? WHERE id = ?", params.Name, params.Email, id)
 

@@ -9,6 +9,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/jguimeradev/priv-go-rest/internal/config"
 	"github.com/jguimeradev/priv-go-rest/internal/repository"
+	"github.com/jguimeradev/priv-go-rest/internal/service"
 )
 
 func main() {
@@ -48,4 +49,6 @@ func main() {
 	u := repository.NewUserRepo(db)
 	fmt.Println(u)
 
+	s := service.NewUserSvc(u)
+	fmt.Println(s)
 }
