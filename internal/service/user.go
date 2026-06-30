@@ -55,3 +55,21 @@ func (s *UserSvc) ReadUser(id int) (domain.UserResponse, error) {
 
 	return ur, nil
 }
+
+func (s *UserSvc) FetchAllUsers() ([]domain.UserResponse, error) {
+
+	users, err := s.userRepo.All()
+
+	if err != nil {
+		return []domain.UserResponse{}, err
+	}
+
+	ur := []domain.UserResponse{}
+
+	for _, user := range users {
+		ur = append(ur, newUserResponse(&user))
+	}
+
+	return ur, nil
+
+}
