@@ -22,3 +22,5 @@ type UserResponse struct {
 
 var ErrUserNotFound = errors.New("user not found")
 var ErrUserAlreadyExists = errors.New("user already exists")
+var ErrSamePassword = errors.New("same password")
+var ErrInvalidPassword = errors.New("invalid password")

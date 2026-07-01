@@ -1,7 +1,8 @@
 package service
 
 import (
-	"strings"
+	"errors"
+	"fmt"
 
 	"github.com/jguimeradev/priv-go-rest/internal/domain"
 	"golang.org/x/crypto/bcrypt"
@@ -46,6 +47,17 @@ func newUserResponse(u *domain.User) domain.UserResponse {
 	return r
 }
 
+func hashPassword(password string) (string, error) {
+
+	pwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	if err != nil {
+		return "", err
+	}
+
+	return string(pwd), nil
+}
+
 func (s *UserSvc) ReadUser(id int) (domain.UserResponse, error) {
 
 	u, err := s.userRepo.Read(id)
@@ -79,13 +91,13 @@ func (s *UserSvc) FetchAllUsers() ([]domain.UserResponse, error) {
 
 func (s *UserSvc) CreateUser(name string, email string, password string) (int, error) {
 
-	pwd, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	pwd, err := hashPassword(password)
 
 	if err != nil {
 		return 0, err
 	}
 
-	id, err := s.userRepo.Create(name, email, string(pwd))
+	id, err := s.userRepo.Create(name, email, pwd)
 
 	if err != nil {
 		return 0, err
@@ -117,9 +129,32 @@ func (s *UserSvc) DeleteUser(id int) error {
 }
 func (s *UserSvc) ChangePassword(id int, oldPassword string, newPassword string) error {
 
-	strings.Compare(oldPassword, newPassword)
+	u, err := s.userRepo.Read(id)
 
-	err := s.userRepo.UpdatePassword(id, newPassword)
+	if err != nil {
+		return err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(oldPassword))
+
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return domain.ErrInvalidPassword
+		}
+		return fmt.Errorf("ChangePassword: %w", err)
+	}
+
+	if oldPassword == newPassword {
+		return domain.ErrSamePassword
+	}
+
+	newPwd, err := hashPassword(newPassword)
+
+	if err != nil {
+		return err
+	}
+
+	err = s.userRepo.UpdatePassword(id, newPwd)
 
 	if err != nil {
 		return err
