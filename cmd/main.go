@@ -47,8 +47,8 @@ func main() {
 	}
 
 	u := repository.NewUserRepo(db)
-	fmt.Println(u)
+	fmt.Println("main - newuserrepo: ", u)
 
 	s := service.NewUserSvc(u)
-	fmt.Println(s)
+	fmt.Println("main - newusersvc: ", s)
 }

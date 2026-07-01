@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/jguimeradev/priv-go-rest/internal/domain"
 )
 
@@ -23,7 +24,18 @@ func (d *UserRepo) Create(name string, email string, password string) (int, erro
 	res, err := d.db.Exec("INSERT INTO users (name, email, password) VALUES (?,?,?)", name, email, password)
 
 	if err != nil {
+
+		var mysqlErr *mysql.MySQLError
+
+		if errors.As(err, &mysqlErr) {
+			if mysqlErr.Number == 1062 {
+				return 0, domain.ErrUserAlreadyExists
+			}
+			return 0, fmt.Errorf("Create: %w", err)
+		}
+
 		return 0, err
+
 	}
 
 	id, err := res.LastInsertId()
@@ -81,10 +93,20 @@ func (d *UserRepo) Read(id int) (domain.User, error) {
 
 func (d *UserRepo) Update(id int, params domain.UpdateUserParams) error {
 
-	_, err := d.db.Exec("UPDATE users SET name = ?, email = ? WHERE id = ?", params.Name, params.Email, id)
+	res, err := d.db.Exec("UPDATE users SET name = ?, email = ? WHERE id = ?", params.Name, params.Email, id)
 
 	if err != nil {
 		return err
+	}
+
+	rows, err := res.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return domain.ErrUserNotFound
 	}
 
 	return nil
@@ -93,10 +115,20 @@ func (d *UserRepo) Update(id int, params domain.UpdateUserParams) error {
 
 func (d *UserRepo) Delete(id int) error {
 
-	_, err := d.db.Exec("DELETE FROM users WHERE id = ?", id)
+	res, err := d.db.Exec("DELETE FROM users WHERE id = ?", id)
 
 	if err != nil {
 		return err
+	}
+
+	rows, err := res.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return domain.ErrUserNotFound
 	}
 
 	return nil

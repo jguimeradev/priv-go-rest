@@ -1,7 +1,10 @@
 package service
 
 import (
+	"strings"
+
 	"github.com/jguimeradev/priv-go-rest/internal/domain"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
@@ -72,4 +75,55 @@ func (s *UserSvc) FetchAllUsers() ([]domain.UserResponse, error) {
 
 	return ur, nil
 
+}
+
+func (s *UserSvc) CreateUser(name string, email string, password string) (int, error) {
+
+	pwd, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := s.userRepo.Create(name, email, string(pwd))
+
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+func (s *UserSvc) UpdateUser(id int, params domain.UpdateUserParams) error {
+
+	err := s.userRepo.Update(id, params)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *UserSvc) DeleteUser(id int) error {
+
+	err := s.userRepo.Delete(id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func (s *UserSvc) ChangePassword(id int, oldPassword string, newPassword string) error {
+
+	strings.Compare(oldPassword, newPassword)
+
+	err := s.userRepo.UpdatePassword(id, newPassword)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
