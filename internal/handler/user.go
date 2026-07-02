@@ -21,6 +21,12 @@ import (
 	"DELETE /users/{id}", deleteUser
 */
 
+type CreateUserRequest struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 type UserHandler struct {
 	userSvc service.UserService
 }
@@ -33,6 +39,7 @@ func NewUserHandler(svc service.UserService) *UserHandler {
 
 func (u UserHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /users/{id}", u.HandleGetUser)
+	mux.HandleFunc("POST /users", u.HandlePostUser)
 }
 
 func (u UserHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) {
@@ -63,4 +70,15 @@ func (u UserHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error encoding JSON response: %v", err)
 		return
 	}
+}
+
+func (u UserHandler) HandlePostUser(w http.ResponseWriter, r *http.Request) {
+
+	var c *CreateUserRequest
+
+	err := json.NewDecoder(r.Body).Decode(c)
+	if err != nil {
+		//TBD
+	}
+
 }
