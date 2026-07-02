@@ -3,10 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/go-playground/validator"
 	"github.com/jguimeradev/priv-go-rest/internal/domain"
 	"github.com/jguimeradev/priv-go-rest/internal/service"
 )
@@ -35,6 +37,13 @@ func NewUserHandler(svc service.UserService) *UserHandler {
 	return &UserHandler{
 		userSvc: svc,
 	}
+}
+
+var validate *validator.Validate
+
+func (c *CreateUserRequest) validateRequest() {
+
+	validate = validator.New()
 }
 
 func (u UserHandler) RegisterRoutes(mux *http.ServeMux) {
@@ -74,11 +83,21 @@ func (u UserHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) {
 
 func (u UserHandler) HandlePostUser(w http.ResponseWriter, r *http.Request) {
 
-	var c *CreateUserRequest
+	var c CreateUserRequest
 
-	err := json.NewDecoder(r.Body).Decode(c)
+	err := json.NewDecoder(r.Body).Decode(&c)
+
 	if err != nil {
-		//TBD
+		http.Error(w, "Malformed Request syntax", http.StatusBadRequest)
+		return
 	}
+
+	c.validateRequest()
+
+	id, err := u.userSvc.CreateUser(c.Name, c.Email, c.Password)
+
+	//err: password, userexists, other errors: 500
+
+	fmt.Println(id)
 
 }
