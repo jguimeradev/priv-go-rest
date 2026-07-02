@@ -4,16 +4,19 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jguimeradev/priv-go-rest/internal/config"
+	"github.com/jguimeradev/priv-go-rest/internal/handler"
 	"github.com/jguimeradev/priv-go-rest/internal/repository"
 	"github.com/jguimeradev/priv-go-rest/internal/service"
 )
 
 func main() {
 
+	//config
 	c, err := config.Load()
 
 	if len(err) > 0 {
@@ -23,7 +26,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Specify connection properties.
 	cfg := mysql.NewConfig()
 	cfg.User = c.DbUser
 	cfg.Passwd = c.DbPassword
@@ -31,24 +33,37 @@ func main() {
 	cfg.Addr = c.DbHost + ":" + c.DbPort
 	cfg.DBName = c.DbName
 
-	// Get a driver-specific connector.
+	//database
+
 	connector, errdb := mysql.NewConnector(cfg)
 
 	if errdb != nil {
 		log.Fatal(errdb)
 	}
 
-	// Get a database handle.
 	db := sql.OpenDB(connector)
 
-	// Confirm a successful connection.
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
 
-	u := repository.NewUserRepo(db)
-	fmt.Println("main - newuserrepo: ", u)
+	//wiring
 
-	s := service.NewUserSvc(u)
+	r := repository.NewUserRepo(db)
+	fmt.Println("main - newuserrepo: ", r)
+
+	s := service.NewUserSvc(r)
 	fmt.Println("main - newusersvc: ", s)
+
+	u := handler.NewUserHandler(s)
+	fmt.Println("main - newhandleruser: ", u)
+
+	//server
+
+	mux := http.NewServeMux()
+
+	u.RegisterRoutes(mux)
+
+	log.Fatal(http.ListenAndServe(":"+c.AppPort, mux))
+
 }
