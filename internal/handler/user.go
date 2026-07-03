@@ -3,12 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/jguimeradev/priv-go-rest/internal/domain"
 	"github.com/jguimeradev/priv-go-rest/internal/service"
 )
@@ -23,10 +22,12 @@ import (
 	"DELETE /users/{id}", deleteUser
 */
 
+var validate *validator.Validate = validator.New(validator.WithRequiredStructEnabled())
+
 type CreateUserRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Name     string `json:"name" validate:"required,min=5,max=100"`
+	Email    string `json:"email" validate:"required,email,max=255"`
+	Password string `json:"password" validate:"required,min=8,max=72"`
 }
 
 type UserHandler struct {
@@ -39,11 +40,12 @@ func NewUserHandler(svc service.UserService) *UserHandler {
 	}
 }
 
-var validate *validator.Validate
+func (c *CreateUserRequest) validateRequest() error {
 
-func (c *CreateUserRequest) validateRequest() {
-
-	validate = validator.New()
+	if err := validate.Struct(c); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (u UserHandler) RegisterRoutes(mux *http.ServeMux) {
@@ -92,12 +94,38 @@ func (u UserHandler) HandlePostUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c.validateRequest()
+	if err = c.validateRequest(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	id, err := u.userSvc.CreateUser(c.Name, c.Email, c.Password)
 
-	//err: password, userexists, other errors: 500
+	if err != nil {
+		if errors.Is(err, domain.ErrUserAlreadyExists) {
+			http.Error(w, "User already exists", http.StatusConflict)
+			return
+		}
+		http.Error(w, "Server Error", http.StatusInternalServerError)
+		return
+	}
 
-	fmt.Println(id)
+	ur := domain.UserResponse{
+		ID:    id,
+		Name:  c.Name,
+		Email: c.Email,
+	}
+
+	sid := strconv.Itoa(id)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Location", "/users/"+sid)
+	w.WriteHeader(http.StatusCreated)
+
+	err = json.NewEncoder(w).Encode(ur)
+	if err != nil {
+		log.Printf("Error encoding JSON response: %v", err)
+		return
+	}
 
 }

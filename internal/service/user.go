@@ -36,7 +36,7 @@ func NewUserSvc(repo UserRepository) *UserSvc {
 	}
 }
 
-func newUserResponse(u *domain.User) domain.UserResponse {
+func NewUserResponse(u *domain.User) domain.UserResponse {
 
 	r := domain.UserResponse{
 		ID:    u.ID,
@@ -66,7 +66,7 @@ func (s *UserSvc) ReadUser(id int) (domain.UserResponse, error) {
 		return domain.UserResponse{}, err
 	}
 
-	ur := newUserResponse(&u)
+	ur := NewUserResponse(&u)
 
 	return ur, nil
 }
@@ -82,7 +82,7 @@ func (s *UserSvc) FetchAllUsers() ([]domain.UserResponse, error) {
 	ur := []domain.UserResponse{}
 
 	for _, user := range users {
-		ur = append(ur, newUserResponse(&user))
+		ur = append(ur, NewUserResponse(&user))
 	}
 
 	return ur, nil
