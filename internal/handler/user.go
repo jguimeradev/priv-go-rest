@@ -51,6 +51,7 @@ func (c *CreateUserRequest) validateRequest() error {
 func (u UserHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /users/{id}", u.HandleGetUser)
 	mux.HandleFunc("POST /users", u.HandlePostUser)
+	//mux.HandleFunc("PATCH /users/{id}", u.HandlePatchUser)
 }
 
 func (u UserHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) {
@@ -125,6 +126,19 @@ func (u UserHandler) HandlePostUser(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(ur)
 	if err != nil {
 		log.Printf("Error encoding JSON response: %v", err)
+		return
+	}
+
+}
+
+func HandlePatchUser(w http.ResponseWriter, r *http.Request) {
+
+	var c CreateUserRequest
+
+	err := json.NewDecoder(r.Body).Decode(&c)
+
+	if err != nil {
+		http.Error(w, "Malformed Request syntax", http.StatusBadRequest)
 		return
 	}
 
