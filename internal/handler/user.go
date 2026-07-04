@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -30,6 +31,11 @@ type CreateUserRequest struct {
 	Password string `json:"password" validate:"required,min=8,max=72"`
 }
 
+type UpdateUserRequest struct {
+	Name  *string `json:"name" validate:"omitempty,min=5,max=100"`
+	Email *string `json:"email" validate:"omitempty,email,max=255"`
+}
+
 type UserHandler struct {
 	userSvc service.UserService
 }
@@ -40,18 +46,10 @@ func NewUserHandler(svc service.UserService) *UserHandler {
 	}
 }
 
-func (c *CreateUserRequest) validateRequest() error {
-
-	if err := validate.Struct(c); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (u UserHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /users/{id}", u.HandleGetUser)
 	mux.HandleFunc("POST /users", u.HandlePostUser)
-	//mux.HandleFunc("PATCH /users/{id}", u.HandlePatchUser)
+	mux.HandleFunc("PATCH /users/{id}", u.HandlePatchUser)
 }
 
 func (u UserHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) {
@@ -82,6 +80,14 @@ func (u UserHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error encoding JSON response: %v", err)
 		return
 	}
+}
+
+func (c *CreateUserRequest) validateRequest() error {
+
+	if err := validate.Struct(c); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (u UserHandler) HandlePostUser(w http.ResponseWriter, r *http.Request) {
@@ -131,15 +137,31 @@ func (u UserHandler) HandlePostUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func HandlePatchUser(w http.ResponseWriter, r *http.Request) {
+func (u UserHandler) HandlePatchUser(w http.ResponseWriter, r *http.Request) {
 
-	var c CreateUserRequest
+	var p UpdateUserRequest
 
-	err := json.NewDecoder(r.Body).Decode(&c)
+	err := json.NewDecoder(r.Body).Decode(&p)
+
+	log.Printf("decoded: %+v", p)
 
 	if err != nil {
 		http.Error(w, "Malformed Request syntax", http.StatusBadRequest)
 		return
 	}
 
+	if err = p.validateRequest(); err != nil {
+		fmt.Println("validate err:", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+}
+
+func (u *UpdateUserRequest) validateRequest() error {
+
+	if err := validate.Struct(u); err != nil {
+		return err
+	}
+	return nil
 }
