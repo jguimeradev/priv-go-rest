@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -139,23 +138,48 @@ func (u UserHandler) HandlePostUser(w http.ResponseWriter, r *http.Request) {
 
 func (u UserHandler) HandlePatchUser(w http.ResponseWriter, r *http.Request) {
 
-	var p UpdateUserRequest
+	i := r.PathValue("id")
 
-	err := json.NewDecoder(r.Body).Decode(&p)
-
-	log.Printf("decoded: %+v", p)
+	id, err := strconv.Atoi(i)
 
 	if err != nil {
-		http.Error(w, "Malformed Request syntax", http.StatusBadRequest)
+		http.Error(w, "Bad Request", http.StatusBadRequest) //400 parse
+		return
+	}
+
+	var p UpdateUserRequest
+
+	err = json.NewDecoder(r.Body).Decode(&p)
+
+	if err != nil {
+		http.Error(w, "Malformed Request syntax", http.StatusBadRequest) //400 decode
 		return
 	}
 
 	if err = p.validateRequest(); err != nil {
-		fmt.Println("validate err:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest) //400 validation
 		return
 	}
 
+	input := domain.UpdateUserInput{
+		Name:  p.Name,
+		Email: p.Email,
+	}
+
+	err = u.userSvc.UpdateUser(id, input) //404, 409, 500
+
+	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, domain.ErrUserAlreadyExists) {
+			http.Error(w, "User already exists", http.StatusConflict)
+			return
+		}
+		http.Error(w, "Server Error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (u *UpdateUserRequest) validateRequest() error {
