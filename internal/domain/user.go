@@ -20,6 +20,12 @@ type UserResponse struct {
 	Email string `json:"email"`
 }
 
+// a bridge between UpdateUserRequest and UpdateUserParams (handler / service )
+type UpdateUserInput struct {
+	Name  *string
+	Email *string
+}
+
 var ErrUserNotFound = errors.New("user not found")
 var ErrUserAlreadyExists = errors.New("user already exists")
 var ErrSamePassword = errors.New("same password")
