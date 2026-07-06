@@ -46,6 +46,7 @@ func NewUserHandler(svc service.UserService) *UserHandler {
 }
 
 func (u UserHandler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /users", u.HandleGetUsers)
 	mux.HandleFunc("GET /users/{id}", u.HandleGetUser)
 	mux.HandleFunc("POST /users", u.HandlePostUser)
 	mux.HandleFunc("PATCH /users/{id}", u.HandlePatchUser)
@@ -66,6 +67,23 @@ func (u *UpdateUserRequest) validateRequest() error {
 		return err
 	}
 	return nil
+}
+
+func (u UserHandler) HandleGetUsers(w http.ResponseWriter, r *http.Request) {
+
+	users, err := u.userSvc.FetchAllUsers()
+
+	if err != nil {
+		http.Error(w, "Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err = json.NewEncoder(w).Encode(users); err != nil {
+		log.Printf("Error encoding JSON response: %v", err)
+		return
+	}
+
 }
 
 func (u UserHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) {
