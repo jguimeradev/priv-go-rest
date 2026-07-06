@@ -108,8 +108,8 @@ func (u UserHandler) HandlePostUser(w http.ResponseWriter, r *http.Request) {
 	id, err := u.userSvc.CreateUser(c.Name, c.Email, c.Password)
 
 	if err != nil {
-		if errors.Is(err, domain.ErrUserAlreadyExists) {
-			http.Error(w, "User already exists", http.StatusConflict)
+		if errors.Is(err, domain.ErrMailAlreadyExists) {
+			http.Error(w, "Mail already exists", http.StatusConflict)
 			return
 		}
 		http.Error(w, "Server Error", http.StatusInternalServerError)
@@ -122,10 +122,7 @@ func (u UserHandler) HandlePostUser(w http.ResponseWriter, r *http.Request) {
 		Email: c.Email,
 	}
 
-	sid := strconv.Itoa(id)
-
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Location", "/users/"+sid)
 	w.WriteHeader(http.StatusCreated)
 
 	err = json.NewEncoder(w).Encode(ur)
@@ -166,18 +163,27 @@ func (u UserHandler) HandlePatchUser(w http.ResponseWriter, r *http.Request) {
 		Email: p.Email,
 	}
 
-	err = u.userSvc.UpdateUser(id, input) //404, 409, 500
+	response, err := u.userSvc.UpdateUser(id, input) //404, 409, 500
 
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			http.Error(w, "User not found", http.StatusNotFound)
 			return
 		}
-		if errors.Is(err, domain.ErrUserAlreadyExists) {
-			http.Error(w, "User already exists", http.StatusConflict)
+		if errors.Is(err, domain.ErrMailAlreadyExists) {
+			http.Error(w, "Email already in use", http.StatusConflict)
 			return
 		}
 		http.Error(w, "Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		log.Printf("Error encoding JSON response: %v", err)
 		return
 	}
 }

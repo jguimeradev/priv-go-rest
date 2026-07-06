@@ -12,7 +12,7 @@ type UserService interface {
 	CreateUser(name string, email string, password string) (int, error)
 	ReadUser(id int) (domain.UserResponse, error)
 	FetchAllUsers() ([]domain.UserResponse, error)
-	UpdateUser(id int, params domain.UpdateUserInput) error
+	UpdateUser(id int, params domain.UpdateUserInput) (domain.UserResponse, error)
 	DeleteUser(id int) error
 	ChangePassword(id int, oldPassword string, newPassword string) error
 }
@@ -106,12 +106,12 @@ func (s *UserSvc) CreateUser(name string, email string, password string) (int, e
 	return id, nil
 }
 
-func (s *UserSvc) UpdateUser(id int, input domain.UpdateUserInput) error {
+func (s *UserSvc) UpdateUser(id int, input domain.UpdateUserInput) (domain.UserResponse, error) {
 
 	u, err := s.userRepo.Read(id)
 
 	if err != nil {
-		return err
+		return domain.UserResponse{}, err
 	}
 
 	params := domain.UpdateUserParams{
@@ -127,8 +127,19 @@ func (s *UserSvc) UpdateUser(id int, input domain.UpdateUserInput) error {
 		params.Name = *input.Name
 	}
 
-	return s.userRepo.Update(id, params)
+	err = s.userRepo.Update(id, params)
 
+	if err != nil {
+		return domain.UserResponse{}, err
+	}
+
+	response := domain.UserResponse{
+		ID:    id,
+		Name:  params.Name,
+		Email: params.Email,
+	}
+
+	return response, nil
 }
 
 func (s *UserSvc) DeleteUser(id int) error {

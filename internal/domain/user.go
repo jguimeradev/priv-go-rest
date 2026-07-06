@@ -27,7 +27,7 @@ type UpdateUserInput struct {
 }
 
 var ErrUserNotFound = errors.New("user not found")
-var ErrUserAlreadyExists = errors.New("user already exists")
+var ErrMailAlreadyExists = errors.New("email already in use")
 var ErrSamePassword = errors.New("same password")
 var ErrInvalidPassword = errors.New("invalid password")
 var ErrInternalServer = errors.New("internal server error")

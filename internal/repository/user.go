@@ -29,7 +29,7 @@ func (d *UserRepo) Create(name string, email string, password string) (int, erro
 
 		if errors.As(err, &mysqlErr) {
 			if mysqlErr.Number == 1062 {
-				return 0, domain.ErrUserAlreadyExists
+				return 0, domain.ErrMailAlreadyExists
 			}
 			return 0, fmt.Errorf("Create: %w", err)
 		}
@@ -96,7 +96,18 @@ func (d *UserRepo) Update(id int, params domain.UpdateUserParams) error {
 	res, err := d.db.Exec("UPDATE users SET name = ?, email = ? WHERE id = ?", params.Name, params.Email, id)
 
 	if err != nil {
+
+		var mysqlErr *mysql.MySQLError
+
+		if errors.As(err, &mysqlErr) {
+			if mysqlErr.Number == 1062 {
+				return domain.ErrMailAlreadyExists
+			}
+			return fmt.Errorf("Update: %w", err)
+		}
+
 		return err
+
 	}
 
 	rows, err := res.RowsAffected()

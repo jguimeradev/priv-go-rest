@@ -27,6 +27,7 @@ func main() {
 	}
 
 	cfg := mysql.NewConfig()
+	cfg.ClientFoundRows = true
 	cfg.User = c.DbUser
 	cfg.Passwd = c.DbPassword
 	cfg.Net = c.NetProt
