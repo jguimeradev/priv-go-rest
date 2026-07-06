@@ -49,6 +49,23 @@ func (u UserHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /users/{id}", u.HandleGetUser)
 	mux.HandleFunc("POST /users", u.HandlePostUser)
 	mux.HandleFunc("PATCH /users/{id}", u.HandlePatchUser)
+	mux.HandleFunc("DELETE /users/{id}", u.HandleDeleteUser)
+}
+
+func (c *CreateUserRequest) validateRequest() error {
+
+	if err := validate.Struct(c); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *UpdateUserRequest) validateRequest() error {
+
+	if err := validate.Struct(u); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (u UserHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) {
@@ -79,14 +96,6 @@ func (u UserHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error encoding JSON response: %v", err)
 		return
 	}
-}
-
-func (c *CreateUserRequest) validateRequest() error {
-
-	if err := validate.Struct(c); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (u UserHandler) HandlePostUser(w http.ResponseWriter, r *http.Request) {
@@ -188,10 +197,28 @@ func (u UserHandler) HandlePatchUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (u *UpdateUserRequest) validateRequest() error {
+func (u UserHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) {
 
-	if err := validate.Struct(u); err != nil {
-		return err
+	i := r.PathValue("id")
+
+	id, err := strconv.Atoi(i)
+
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
 	}
-	return nil
+
+	err = u.userSvc.DeleteUser(id)
+
+	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent) //204
+
 }
