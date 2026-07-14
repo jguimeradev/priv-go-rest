@@ -53,6 +53,9 @@ func main() {
 	r := repository.NewUserRepo(db)
 	fmt.Println("main - newuserrepo: ", r)
 
+	l := service.NewAuthService(r, c.JwtSecret, c.TokenLifetime)
+	fmt.Println("main - newauthsvc: ", l)
+
 	s := service.NewUserSvc(r)
 	fmt.Println("main - newusersvc: ", s)
 
