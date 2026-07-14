@@ -3,8 +3,10 @@ package service
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jguimeradev/priv-go-rest/internal/domain"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -27,15 +29,13 @@ func NewAuthService(repo AuthRepository, jwtSecret string, tokenLifetime time.Du
 	}
 }
 
-type JWToken struct {
-}
-
 func (a *AuthSvc) Login(email string, password string) (string, error) {
 
 	u, err := a.authRepo.ReadByEmail(email)
 
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
+			// TODO: dummy bcrypt compare (timing)
 			return "", domain.ErrInvalidCredentials
 		}
 		return "", fmt.Errorf("Login: %w", err)
@@ -50,6 +50,19 @@ func (a *AuthSvc) Login(email string, password string) (string, error) {
 		return "", fmt.Errorf("Login: %w", err)
 	}
 
-	return u.Email, nil
+	claims := jwt.RegisteredClaims{
+		Subject:   strconv.Itoa(u.ID),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(a.tokenLifetime)),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	tokenString, err := token.SignedString([]byte(a.jwtSecret))
+
+	if err != nil {
+		return "", fmt.Errorf("Login: %w", err)
+	}
+
+	return tokenString, nil
 
 }
