@@ -91,6 +91,19 @@ func (d *UserRepo) Read(id int) (domain.User, error) {
 
 }
 
+func (d *UserRepo) ReadByEmail(email string) (domain.User, error) {
+	var user domain.User
+	err := d.db.QueryRow("SELECT id, name, email, password from users WHERE email = ?", email).Scan(&user.ID, &user.Name, &user.Email, &user.Password)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.User{}, domain.ErrUserNotFound
+		}
+		return domain.User{}, fmt.Errorf("Read by Email: %w", err)
+	}
+
+	return user, nil
+}
+
 func (d *UserRepo) Update(id int, params domain.UpdateUserParams) error {
 
 	res, err := d.db.Exec("UPDATE users SET name = ?, email = ? WHERE id = ?", params.Name, params.Email, id)
