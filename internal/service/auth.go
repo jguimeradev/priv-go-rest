@@ -11,6 +11,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type AuthService interface {
+	Login(email string, password string) (string, error)
+}
+
 type AuthRepository interface {
 	ReadByEmail(email string) (domain.User, error)
 }
@@ -21,7 +25,7 @@ type AuthSvc struct {
 	tokenLifetime time.Duration
 }
 
-func NewAuthService(repo AuthRepository, jwtSecret string, tokenLifetime time.Duration) *AuthSvc {
+func NewAuthSvc(repo AuthRepository, jwtSecret string, tokenLifetime time.Duration) *AuthSvc {
 	return &AuthSvc{
 		authRepo:      repo,
 		jwtSecret:     jwtSecret,

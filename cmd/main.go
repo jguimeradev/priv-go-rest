@@ -50,23 +50,22 @@ func main() {
 
 	//wiring
 
-	r := repository.NewUserRepo(db)
-	fmt.Println("main - newuserrepo: ", r)
+	userRepo := repository.NewUserRepo(db)
 
-	l := service.NewAuthService(r, c.JwtSecret, c.TokenLifetime)
-	fmt.Println("main - newauthsvc: ", l)
+	authSvc := service.NewAuthSvc(userRepo, c.JwtSecret, c.TokenLifetime)
 
-	s := service.NewUserSvc(r)
-	fmt.Println("main - newusersvc: ", s)
+	userSvc := service.NewUserSvc(userRepo)
 
-	u := handler.NewUserHandler(s)
-	fmt.Println("main - newhandleruser: ", u)
+	userHandler := handler.NewUserHandler(userSvc)
+
+	authHandler := handler.NewAuthHandler(authSvc)
 
 	//server
 
 	mux := http.NewServeMux()
 
-	u.RegisterRoutes(mux)
+	userHandler.RegisterRoutes(mux)
+	authHandler.RegisterRoutes(mux)
 
 	log.Fatal(http.ListenAndServe(":"+c.AppPort, mux))
 
