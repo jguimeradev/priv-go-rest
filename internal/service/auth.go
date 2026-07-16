@@ -13,6 +13,7 @@ import (
 
 type AuthService interface {
 	Login(email string, password string) (string, error)
+	VerifyToken(tokenString string) (int, error)
 }
 
 type AuthRepository interface {
@@ -39,7 +40,6 @@ func (a *AuthSvc) Login(email string, password string) (string, error) {
 
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
-			// TODO: dummy bcrypt compare (timing)
 			return "", domain.ErrInvalidCredentials
 		}
 		return "", fmt.Errorf("Login: %w", err)
@@ -68,5 +68,33 @@ func (a *AuthSvc) Login(email string, password string) (string, error) {
 	}
 
 	return tokenString, nil
+
+}
+
+func (a *AuthSvc) VerifyToken(tokenString string) (int, error) {
+
+	claims := &jwt.RegisteredClaims{}
+
+	_, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (any, error) {
+		return []byte(a.jwtSecret), nil
+	})
+
+	if err != nil {
+		return 0, domain.ErrInvalidToken
+	}
+
+	id, err := claims.GetSubject()
+
+	if err != nil {
+		return 0, fmt.Errorf("VerifyToken: %w", err)
+	}
+
+	i, err := strconv.Atoi(id)
+
+	if err != nil {
+		return 0, fmt.Errorf("VerifyToken: %w", err)
+	}
+
+	return i, nil
 
 }
