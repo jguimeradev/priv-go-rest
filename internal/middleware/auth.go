@@ -11,6 +11,7 @@ type TokenVerifier interface {
 }
 
 func unauthorized(w http.ResponseWriter) {
+	w.Header().Set("WWW-Authenticate", "Bearer")
 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
 }
 
@@ -20,7 +21,6 @@ func Auth(next http.Handler, t TokenVerifier) http.Handler {
 
 		header := r.Header.Get("Authorization")
 		if header == "" {
-			w.Header().Set("WWW-Authenticate", "Bearer")
 			unauthorized(w)
 			return
 		}
