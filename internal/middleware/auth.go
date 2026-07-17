@@ -1,10 +1,14 @@
 package middleware
 
 import (
-	"fmt"
+	"context"
 	"net/http"
 	"strings"
 )
+
+type ctxKey int
+
+const userIDKey ctxKey = 0
 
 type TokenVerifier interface {
 	VerifyToken(tokenString string) (int, error)
@@ -38,9 +42,11 @@ func Auth(next http.Handler, t TokenVerifier) http.Handler {
 			return
 		}
 
-		fmt.Println(id)
+		c := context.WithValue(r.Context(), userIDKey, id)
 
-		next.ServeHTTP(w, r) // Call the next handler
-		// Post-processing logic
+		r = r.WithContext(c)
+
+		next.ServeHTTP(w, r)
+
 	})
 }

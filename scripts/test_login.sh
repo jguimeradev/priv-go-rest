@@ -126,7 +126,9 @@ else
 fi
 
 # ---------- 6. Cleanup: DELETE the disposable user ----------
+# DELETE is guarded by the auth middleware now — send the token from step 2.
 status=$(curl -s -o /dev/null -w '%{http_code}' \
+  -H "Authorization: Bearer $TOKEN" \
   -X DELETE "$BASE_URL/users/$USER_ID")
 
 if [[ "$status" == "204" ]]; then

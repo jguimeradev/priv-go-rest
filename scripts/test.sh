@@ -15,6 +15,7 @@ check() {
     local response status
 
     response=$(curl -s -w '\n%{http_code}' -X PATCH "$BASE_URL$path" \
+        -H "Authorization: Bearer $TOKEN" \
         -H 'Content-Type: application/json' -d "$body")
     status=$(tail -n1 <<<"$response")
 
@@ -41,6 +42,18 @@ if [[ -z "$id" ]]; then
     exit 1
 fi
 echo "setup: created disposable user id=$id"
+
+# PATCH is guarded by the auth middleware — log in as the disposable user.
+TOKEN=$(curl -s -X POST "$BASE_URL/auth/login" \
+    -H 'Content-Type: application/json' \
+    -d "{\"email\":\"$email\",\"password\":\"password123\"}" \
+    | sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+
+if [[ -z "$TOKEN" ]]; then
+    echo "SETUP FAILED: could not log in as the disposable user."
+    exit 1
+fi
+echo "setup: logged in, token acquired"
 
 echo
 echo "== Three-state contract on 'name' =="

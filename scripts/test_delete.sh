@@ -15,7 +15,8 @@ check() {
     local desc="$1" expected="$2" method="$3" path="$4"
     local response status
 
-    response=$(curl -s -w '\n%{http_code}' -X "$method" "$BASE_URL$path")
+    response=$(curl -s -w '\n%{http_code}' -X "$method" \
+        -H "Authorization: Bearer $TOKEN" "$BASE_URL$path")
     status=$(tail -n1 <<<"$response")
 
     if [[ "$status" == "$expected" ]]; then
@@ -41,6 +42,18 @@ if [[ -z "$id" ]]; then
     exit 1
 fi
 echo "setup: created disposable user id=$id"
+
+# DELETE and GET are guarded by the auth middleware — log in as the disposable user.
+TOKEN=$(curl -s -X POST "$BASE_URL/auth/login" \
+    -H 'Content-Type: application/json' \
+    -d "{\"email\":\"$email\",\"password\":\"password123\"}" \
+    | sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+
+if [[ -z "$TOKEN" ]]; then
+    echo "SETUP FAILED: could not log in as the disposable user."
+    exit 1
+fi
+echo "setup: logged in, token acquired"
 
 echo
 echo "== Rejection branches =="

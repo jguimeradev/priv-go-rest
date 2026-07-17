@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/jguimeradev/priv-go-rest/internal/domain"
+	"github.com/jguimeradev/priv-go-rest/internal/middleware"
 	"github.com/jguimeradev/priv-go-rest/internal/service"
 )
 
@@ -45,12 +46,12 @@ func NewUserHandler(svc service.UserService) *UserHandler {
 	}
 }
 
-func (u UserHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /users", u.HandleGetUsers)
-	mux.HandleFunc("GET /users/{id}", u.HandleGetUser)
+func (u UserHandler) RegisterRoutes(mux *http.ServeMux, t middleware.TokenVerifier) {
+	mux.Handle("GET /users", middleware.Auth(http.HandlerFunc(u.HandleGetUsers), t))
+	mux.Handle("GET /users/{id}", middleware.Auth(http.HandlerFunc(u.HandleGetUser), t))
+	mux.Handle("PATCH /users/{id}", middleware.Auth(http.HandlerFunc(u.HandlePatchUser), t))
+	mux.Handle("DELETE /users/{id}", middleware.Auth(http.HandlerFunc(u.HandleDeleteUser), t))
 	mux.HandleFunc("POST /users", u.HandlePostUser)
-	mux.HandleFunc("PATCH /users/{id}", u.HandlePatchUser)
-	mux.HandleFunc("DELETE /users/{id}", u.HandleDeleteUser)
 }
 
 func (c *CreateUserRequest) validateRequest() error {

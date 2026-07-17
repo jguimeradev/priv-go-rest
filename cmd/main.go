@@ -64,7 +64,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	userHandler.RegisterRoutes(mux)
+	userHandler.RegisterRoutes(mux, authSvc)
 	authHandler.RegisterRoutes(mux)
 
 	log.Fatal(http.ListenAndServe(":"+c.AppPort, mux))
